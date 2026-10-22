@@ -1,0 +1,1793 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17212b">
+<title>Telegram App — прототип</title>
+
+<style>
+/* =========================================================
+   1. ПАЛИТРА И ОСНОВНЫЕ НАСТРОЙКИ
+   ========================================================= */
+:root {
+  --accent: #3390ec;
+  --bg: #17212b;
+  --panel: #212e3a;
+  --panel2: #182533;
+  --hover: #2b3b4b;
+  --text: #f5f7fa;
+  --muted: #9eafbf;
+  --line: #30404e;
+  --bubble: #2b5278;
+  --opacity: .96;
+  --font: Arial, "Helvetica Neue", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:disabled { opacity: .4; cursor: default; }
+
+.app {
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Верхняя панель */
+.topbar {
+  height: 58px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  background: color-mix(in srgb, var(--panel) calc(var(--opacity) * 100%), transparent);
+  z-index: 5;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1;
+}
+
+.brand-mark {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+}
+
+.brand-name { font-size: 16px; font-weight: 500; }
+.brand-status { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 9px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  position: relative;
+}
+
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn.active { color: var(--accent); background: var(--hover); }
+
+svg { width: 20px; height: 20px; display: block; }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* Навигационные вкладки */
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 3px;
+  padding: 5px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 13px;
+  white-space: nowrap;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+}
+
+.tab:hover { background: var(--hover); }
+.tab.active { color: var(--accent); background: var(--hover); }
+
+/* Рабочая область: по умолчанию без картинки */
+.workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.workspace::before {
+  content: "";
+  position: fixed;
+  inset: 116px 0 75px;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+}
+
+.page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+.page[hidden] { display: none !important; }
+
+.page-heading {
+  margin: 0 0 5px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.page-subtitle { color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+
+.section {
+  background: var(--panel);
+  background: color-mix(in srgb, var(--panel) calc(var(--opacity) * 100%), transparent);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.section-title {
+  padding: 13px 14px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 53px;
+  border-bottom: 1px solid var(--line);
+}
+
+.row-item:last-child { border-bottom: 0; }
+
+.row-item:hover { background: var(--hover); }
+
+.row-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--accent);
+  background: var(--panel2);
+}
+
+.row-main { min-width: 0; flex: 1; }
+.row-title { font-size: 14px; }
+.row-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.row-value { color: var(--muted); font-size: 12px; }
+
+.primary {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 15px;
+  color: #fff;
+  background: var(--accent);
+}
+.primary:hover { filter: brightness(1.08); }
+
+.secondary {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: var(--panel2);
+}
+.secondary:hover { background: var(--hover); }
+
+.danger { color: #ff7777 !important; }
+
+.field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+.field::placeholder { color: var(--muted); }
+
+.field-label { display: block; margin: 12px 0 6px; color: var(--muted); font-size: 12px; }
+
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 11px;
+  padding: 14px;
+  min-width: 0;
+}
+.stat-number { font-size: 22px; font-weight: 500; }
+.stat-label { color: var(--muted); margin-top: 5px; font-size: 12px; }
+
+.empty {
+  text-align: center;
+  padding: 50px 18px;
+  color: var(--muted);
+}
+.empty svg { width: 40px; height: 40px; margin: 0 auto 14px; opacity: .7; }
+.empty-title { color: var(--text); font-size: 16px; margin-bottom: 7px; }
+
+/* Карточка пользователя */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+}
+.avatar {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--accent);
+  color: white;
+  font-size: 24px;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-name { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
+.profile-handle { color: var(--muted); margin-top: 5px; }
+
+/* Нижний подвал: кнопка, поле, отправка, профиль */
+.composer-wrap {
+  /* [ДОРАБОТКА 1] Убрана горизонтальная полоса за панелью ввода.
+     Обёртка прозрачная; фон, рамка и тень остаются только у .composer. */
+  flex-shrink: 0;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  position: relative;
+  z-index: 5;
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4px;
+  min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--panel);
+  background: color-mix(in srgb, var(--panel) calc(var(--opacity) * 100%), transparent);
+}
+
+.composer .icon-btn { flex-shrink: 0; }
+
+.message-input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 10px 8px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  resize: none;
+  overflow-y: auto;
+  max-height: 100px;
+}
+.message-input:focus { outline: none; }
+.message-input::placeholder { color: var(--muted); }
+
+.profile-bottom {
+  color: var(--accent);
+  background: var(--panel2);
+  border: 1px solid var(--line);
+}
+
+/* Сообщения */
+.message {
+  width: fit-content;
+  max-width: min(78%, 520px);
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--panel);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.message.mine {
+  margin-left: auto;
+  background: var(--bubble);
+  border-radius: 12px 12px 3px 12px;
+}
+.message-time { display: block; font-size: 10px; text-align: right; color: var(--muted); margin-top: 5px; }
+
+/* Всплывающие меню и модальные окна */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #0008;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+.overlay[hidden] { display: none !important; }
+
+.modal {
+  width: min(100%, 440px);
+  max-height: min(82dvh, 700px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 16px 60px #0005;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head strong { flex: 1; font-size: 16px; font-weight: 500; }
+.modal-body { padding: 15px; }
+.modal-foot { padding: 12px 15px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+
+.context-menu {
+  position: fixed;
+  z-index: 40;
+  width: 245px;
+  max-width: calc(100vw - 20px);
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  box-shadow: 0 12px 35px #0006;
+}
+.context-menu[hidden] { display: none !important; }
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 10px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+}
+.context-item svg { color: var(--muted); }
+.context-item:hover { background: var(--hover); }
+.context-separator { height: 1px; background: var(--line); margin: 5px 4px; }
+
+.switch {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 20px;
+  background: #52606d;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .16s;
+}
+.switch:checked { background: #72b74e; }
+.switch:checked::after { transform: translateX(16px); }
+
+.color-grid { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 9px; }
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+.color-swatch.selected { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.tooltip {
+  position: fixed;
+  z-index: 60;
+  max-width: 220px;
+  pointer-events: none;
+  padding: 7px 9px;
+  border: 1px solid #ffffff24;
+  border-radius: 6px;
+  color: #fff;
+  background: #171d24eF;
+  font-size: 11px;
+  line-height: 1.4;
+  box-shadow: 0 5px 15px #0004;
+}
+.tooltip[hidden] { display: none !important; }
+
+.toast {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 24px);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #111d28;
+  color: white;
+  box-shadow: 0 5px 24px #0004;
+}
+.toast[hidden] { display: none !important; }
+
+/* Светлая тема */
+body.light {
+  --bg: #ffffff;
+  --panel: #f3f5f7;
+  --panel2: #e9eef2;
+  --hover: #e2eaf1;
+  --text: #17212b;
+  --muted: #71808f;
+  --line: #dce3e9;
+  --bubble: #d8f0ff;
+}
+
+/* Мобильная компоновка */
+@media (max-width: 600px) {
+  .topbar { height: 53px; padding: 5px 8px; gap: 4px; }
+  .brand-name { font-size: 15px; }
+  .tabs { padding: 4px 5px; }
+  .tab { padding: 9px 11px; font-size: 12px; }
+  .workspace { padding: 12px 10px; }
+  .composer-wrap { padding-left: 7px; padding-right: 7px; }
+  .composer { gap: 2px; min-height: 49px; }
+  .composer .icon-btn { width: 35px; min-width: 35px; height: 35px; padding: 7px; }
+  .message-input { padding-left: 5px; padding-right: 5px; font-size: 14px; }
+  .grid { gap: 7px; }
+  .stat { padding: 11px; }
+  .stat-number { font-size: 19px; }
+  .profile-card { padding: 13px; }
+}
+
+@media (max-width: 350px) {
+  .brand-status { display: none; }
+  .topbar > .icon-btn { width: 34px; min-width: 34px; }
+  .composer .icon-btn { width: 31px; min-width: 31px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+
+<body>
+<div class="app" id="app">
+
+  <!-- SVG-иконки: без сторонних библиотек и внешних файлов -->
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.5-4 3.2-6 7.5-6s7 2 7.5 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m19 13.5 2-1.5-2-1.5-.5-2.1 1-2.3-2.5-1-1.8 1.5h-2.4L11 3l-2 2-2.4-.2-1.2 2.4.8 2-1 2-2.2 1.3 1.5 2.2-.2 2.2 2.3 1.1 2-.8 2 1 1.2 2.2 2.2-1.5 2.2.2 1.1-2.3-.8-2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 11 18-8-7.5 18-3-7-7.5-3Zm7.5 3L21 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m4 17 5-5 4 4 3-3 4 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-wall" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" fill="none" stroke="currentColor" stroke-width="1.2"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 9 9 0 0 1-3.5-.7L4 20l1.4-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 20c0-3.3 2.1-5 6-5s6 1.7 6 5M16 5.5a3 3 0 0 1 0 5.8M18 15c2 .6 3 2.1 3 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 4h12v17l-6-4-6 4V4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><path d="M7 8h10a4 4 0 0 1 3.8 5.3l-1.3 4a2 2 0 0 1-3.2.9L13.5 16h-3l-2.8 2.2a2 2 0 0 1-3.2-.9l-1.3-4A4 4 0 0 1 7 8Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10v4m-2-2h4m5-1h.1m2 3h.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 8h18M9 8v13" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <!-- Верхняя панель -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuButton" data-tip="Открыть меню" aria-label="Меню">
+      <svg><use href="#i-menu"/></svg>
+    </button>
+
+    <div class="brand">
+      <div class="brand-mark"><svg><use href="#i-message"/></svg></div>
+      <div style="min-width:0">
+        <div class="brand-name" id="brandName">Telegram App</div>
+        <div class="brand-status" id="brandStatus">Локальный прототип</div>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- Разделы приложения -->
+  <nav class="tabs" id="tabs" aria-label="Разделы">
+    <button class="tab active" data-page="wall">Стена</button>
+    <button class="tab" data-page="messages">Сообщения</button>
+    <button class="tab" data-page="friends">Друзья</button>
+    <button class="tab" data-page="online">Онлайн</button>
+    <button class="tab" data-page="games">Игры</button>
+    <button class="tab" data-page="builder">Конструктор</button>
+  </nav>
+
+  <!-- Рабочая область -->
+  <main class="workspace" id="workspace">
+
+    <section class="page" id="page-wall">
+      <h1 class="page-heading">Стена</h1>
+      <div class="page-subtitle">Ваше рабочее пространство. Фон пока пустой.</div>
+      <div id="wallMessages"></div>
+      <div class="empty" id="wallEmpty">
+        <svg><use href="#i-message"/></svg>
+        <div class="empty-title">Добро пожаловать</div>
+        <div>Напишите первое сообщение в поле снизу или откройте меню настроек.</div>
+      </div>
+    </section>
+
+    <section class="page" id="page-messages" hidden>
+      <h1 class="page-heading">Сообщения</h1>
+      <div class="page-subtitle">Локальные сообщения этого прототипа.</div>
+      <div id="messageList"></div>
+    </section>
+
+    <section class="page" id="page-friends" hidden>
+      <h1 class="page-heading">Друзья</h1>
+      <div class="page-subtitle">Демонстрационный раздел друзей.</div>
+      <div class="section">
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-user"/></svg></div>
+          <div class="row-main"><div class="row-title">Пока нет друзей</div><div class="row-desc">Подключение пользователей появится на следующем этапе.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-online" hidden>
+      <h1 class="page-heading">Онлайн</h1>
+      <div class="page-subtitle">Список активных пользователей.</div>
+      <div class="section">
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-users"/></svg></div>
+          <div class="row-main"><div class="row-title">Нет подключённых пользователей</div><div class="row-desc">В текущей версии нет сервера и сетевых подключений.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-games" hidden>
+      <h1 class="page-heading">Браузерные игры</h1>
+      <div class="page-subtitle">Место для будущих игр и игровых карточек.</div>
+      <div class="grid">
+        <div class="stat"><div class="row-icon"><svg><use href="#i-game"/></svg></div><div class="row-title" style="margin-top:10px">Мини-игры</div><div class="row-desc">Пока пустой раздел.</div></div>
+        <div class="stat"><div class="row-icon"><svg><use href="#i-layout"/></svg></div><div class="row-title" style="margin-top:10px">Игровые страницы</div><div class="row-desc">Здесь будут размещаться игры.</div></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-builder" hidden>
+      <h1 class="page-heading">Конструктор сайтов</h1>
+      <div class="page-subtitle">Будущая зона создания одностраничных сайтов.</div>
+      <div class="section">
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-layout"/></svg></div>
+          <div class="row-main"><div class="row-title">Новая страница</div><div class="row-desc">Визуальный редактор будет подключён отдельным модулем.</div></div>
+          <button class="secondary" id="builderInfo">Подробнее</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Панель профиля -->
+    <section class="page" id="page-profile" hidden>
+      <h1 class="page-heading">Мой профиль</h1>
+      <div class="page-subtitle">Локальный пользовательский аккаунт.</div>
+
+      <div class="section">
+        <div class="profile-card">
+          <div class="avatar" id="profileAvatar"><span id="avatarInitial">U</span></div>
+          <div class="row-main">
+            <div class="profile-name" id="profileName">Пользователь</div>
+            <div class="profile-handle" id="profileHandle">@user</div>
+          </div>
+          <button class="secondary" id="editProfileButton">Изменить</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="stat"><div class="stat-number" id="statViews">0</div><div class="stat-label">Просмотры</div></div>
+        <div class="stat"><div class="stat-number" id="statSubs">0</div><div class="stat-label">Подписчики</div></div>
+        <div class="stat"><div class="stat-number" id="statFollowing">0</div><div class="stat-label">Подписки</div></div>
+        <div class="stat"><div class="stat-number" id="statSaved">0</div><div class="stat-label">Сохранённое</div></div>
+      </div>
+
+      <div class="section" style="margin-top:12px">
+        <div class="row-item" role="button" tabindex="0" data-page-link="saved">
+          <div class="row-icon"><svg><use href="#i-bookmark"/></svg></div>
+          <div class="row-main"><div class="row-title">Сохранённое</div><div class="row-desc">Личные сохранённые элементы</div></div>
+          <span class="row-value">›</span>
+        </div>
+        <div class="row-item" role="button" tabindex="0" data-page-link="settings">
+          <div class="row-icon"><svg><use href="#i-settings"/></svg></div>
+          <div class="row-main"><div class="row-title">Настройки интерфейса</div><div class="row-desc">Тема, обои, цвета и прозрачность</div></div>
+          <span class="row-value">›</span>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="secondary" id="logoutButton">Выйти из демопрофиля</button>
+      </div>
+    </section>
+
+    <!-- Сохранённое -->
+    <section class="page" id="page-saved" hidden>
+      <h1 class="page-heading">Сохранённое</h1>
+      <div class="page-subtitle">Элементы, которые вы сохранили в прототипе.</div>
+      <div id="savedList"></div>
+      <div class="empty" id="savedEmpty">Сохранённых элементов пока нет.</div>
+    </section>
+
+    <!-- Панель настроек -->
+    <section class="page" id="page-settings" hidden>
+      <h1 class="page-heading">Настройки интерфейса</h1>
+      <div class="page-subtitle">Изменения применяются сразу.</div>
+
+      <div class="section">
+        <div class="section-title">Внешний вид</div>
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-wall"/></svg></div>
+          <div class="row-main"><div class="row-title">Тёмный режим</div><div class="row-desc">Переключение светлой и тёмной темы</div></div>
+          <input class="switch" type="checkbox" id="darkMode" checked aria-label="Тёмный режим">
+        </div>
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-image"/></svg></div>
+          <div class="row-main"><div class="row-title">Фон рабочего пространства</div><div class="row-desc">Загрузить собственное изображение</div></div>
+          <button class="secondary" id="wallpaperButton">Выбрать</button>
+        </div>
+        <div class="row-item">
+          <div class="row-icon"><svg><use href="#i-wall"/></svg></div>
+          <div class="row-main"><div class="row-title">Градиент</div><div class="row-desc">Цвет фона рабочего пространства</div></div>
+          <button class="secondary" id="gradientButton">Настроить</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Официальная палитра Telegram и дополнительные цвета</div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Акцентный цвет</div><div class="row-desc">Цвет активных кнопок и иконок</div></div>
+        </div>
+        <div style="padding:0 14px 15px">
+          <div class="color-grid" id="colorGrid">
+            <button class="color-swatch selected" style="background:#3390ec" data-color="#3390ec" aria-label="Telegram Blue" title="Telegram Blue"></button>
+            <button class="color-swatch" style="background:#2481cc" data-color="#2481cc" aria-label="Telegram Classic" title="Telegram Classic"></button>
+            <button class="color-swatch" style="background:#72b74e" data-color="#72b74e" aria-label="Green" title="Green"></button>
+            <button class="color-swatch" style="background:#a875e8" data-color="#a875e8" aria-label="Violet" title="Violet"></button>
+            <button class="color-swatch" style="background:#e87979" data-color="#e87979" aria-label="Red" title="Red"></button>
+            <button class="color-swatch" style="background:#e4a33c" data-color="#e4a33c" aria-label="Amber" title="Amber"></button>
+            <button class="color-swatch" style="background:#19a78b" data-color="#19a78b" aria-label="Teal" title="Teal"></button>
+            <button class="color-swatch" style="background:#ec67a5" data-color="#ec67a5" aria-label="Pink" title="Pink"></button>
+          </div>
+          <label class="field-label" for="customAccent">Собственный цвет</label>
+          <input class="field" type="color" id="customAccent" value="#3390ec" style="height:42px;padding:4px">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Панели и шрифт</div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Прозрачность панелей</div><div class="row-desc">От 60% до 100%</div></div>
+          <span class="row-value" id="opacityValue">96%</span>
+        </div>
+        <div style="padding:0 14px 15px">
+          <input id="opacityRange" type="range" min="60" max="100" value="96" style="width:100%;accent-color:var(--accent)">
+        </div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Шрифт</div><div class="row-desc">Системный или альтернативный</div></div>
+        </div>
+        <div style="padding:0 14px 15px">
+          <select id="fontSelect" class="field">
+            <option value="Arial, 'Helvetica Neue', sans-serif">Telegram-like / системный</option>
+            <option value="Roboto, Arial, sans-serif">Roboto</option>
+            <option value="Tahoma, sans-serif">Tahoma</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="system-ui, sans-serif">System UI</option>
+          </select>
+        </div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Всплывающие подсказки</div><div class="row-desc">Подсказки при наведении на кнопки</div></div>
+          <input class="switch" type="checkbox" id="tipsToggle" checked aria-label="Всплывающие подсказки">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Навигация и данные</div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Переходы между разделами</div><div class="row-desc">Управление доступными разделами</div></div>
+          <button class="secondary" id="navSettingsButton">Настроить</button>
+        </div>
+        <div class="row-item">
+          <div class="row-main"><div class="row-title">Сбросить интерфейс</div><div class="row-desc">Вернуть настройки по умолчанию</div></div>
+          <button class="secondary danger" id="resetSettingsButton">Сбросить</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Настройка переходов -->
+    <section class="page" id="page-navigation" hidden>
+      <h1 class="page-heading">Переходы между разделами</h1>
+      <div class="page-subtitle">Включайте или скрывайте пункты верхней навигации.</div>
+      <div class="section" id="navigationOptions"></div>
+      <button class="primary" id="saveNavigationButton">Применить</button>
+    </section>
+
+  </main>
+
+  <!-- Нижняя панель ввода -->
+  <footer class="composer-wrap">
+    <div class="composer">
+      <button class="icon-btn" id="attachButton" data-tip="Добавить изображение или файл" aria-label="Вложение">
+        <svg><use href="#i-plus"/></svg>
+      </button>
+      <textarea class="message-input" id="messageInput" rows="1" placeholder="Сообщение или команда…" aria-label="Сообщение"></textarea>
+      <button class="icon-btn" id="sendButton" data-tip="Отправить сообщение" aria-label="Отправить">
+        <svg><use href="#i-send"/></svg>
+      </button>
+      <button class="icon-btn profile-bottom" id="bottomProfileButton" data-tip="Мой профиль" aria-label="Мой профиль">
+        <svg><use href="#i-user"/></svg>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<!-- Контекстное меню: правый клик на рабочем пространстве -->
+<div class="context-menu" id="contextMenu" hidden>
+  <button class="context-item" data-action="search"><svg><use href="#i-search"/></svg> Поиск по сообщениям</button>
+  <button class="context-item" data-action="settings"><svg><use href="#i-settings"/></svg> Настройки интерфейса</button>
+  <button class="context-item" data-action="wallpaper"><svg><use href="#i-image"/></svg> Установить обои</button>
+  <button class="context-item" data-action="gradient"><svg><use href="#i-wall"/></svg> Цвет и градиент</button>
+  <div class="context-separator"></div>
+  <button class="context-item" data-action="profile"><svg><use href="#i-user"/></svg> Мой профиль</button>
+  <button class="context-item" data-action="navigation"><svg><use href="#i-layout"/></svg> Переходы страниц</button>
+</div>
+
+<!-- [ДОБАВЛЕНО] Меню нижней панели: ПКМ или длительное нажатие -->
+<div class="context-menu" id="composerMenu" hidden>
+  <div style="padding:9px 10px 6px;color:var(--muted);font-size:11px">ПОИСК И ИНСТРУМЕНТЫ</div>
+  <button class="context-item" data-composer-action="ai"><svg><use href="#i-search"/></svg> Поиск AI</button>
+  <button class="context-item" data-composer-action="games"><svg><use href="#i-game"/></svg> Поиск игр</button>
+  <button class="context-item" data-composer-action="chats"><svg><use href="#i-message"/></svg> Поиск чатов</button>
+  <button class="context-item" data-composer-action="search"><svg><use href="#i-search"/></svg> Общий поиск</button>
+  <button class="context-item" data-composer-action="stickers"><svg><use href="#i-smile"/></svg> Стикеры</button>
+</div>
+
+<!-- Универсальное модальное окно -->
+<div class="overlay" id="modalOverlay" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header class="modal-head">
+      <strong id="modalTitle">Окно</strong>
+      <button class="icon-btn" id="modalClose" aria-label="Закрыть"><svg><use href="#i-close"/></svg></button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer class="modal-foot" id="modalFoot"></footer>
+  </section>
+</div>
+
+<!-- Деморегистрация -->
+<div class="overlay" id="registerOverlay" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
+    <header class="modal-head"><strong id="registerTitle">Вход в приложение</strong></header>
+    <div class="modal-body">
+      <p style="color:var(--muted);line-height:1.6;margin-top:0">Создайте локальный демопрофиль. Реальный логин и пароль пока не используются.</p>
+      <label class="field-label" for="registerName">Имя пользователя</label>
+      <input class="field" id="registerName" maxlength="40" placeholder="Например, Ром">
+      <label class="field-label" for="registerHandle">Имя профиля</label>
+      <input class="field" id="registerHandle" maxlength="30" placeholder="username">
+    </div>
+    <footer class="modal-foot">
+      <button class="primary" id="registerSubmit">Начать работу</button>
+    </footer>
+  </section>
+</div>
+
+<!-- Скрытые системные поля -->
+<input type="file" id="avatarFile" accept="image/*" hidden>
+<input type="file" id="wallpaperFile" accept="image/*" hidden>
+<input type="file" id="attachmentFile" hidden>
+<div class="tooltip" id="tooltip" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   2. ХРАНИЛИЩЕ И СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+   Все данные ниже локальные. Это не серверная авторизация.
+   ========================================================= */
+
+const STORAGE_KEY = "telegram_app_prototype_v1";
+
+const DEFAULTS = {
+  profile: null,
+  theme: "dark",
+  accent: "#3390ec",
+  opacity: 96,
+  font: "Arial, 'Helvetica Neue', sans-serif",
+  tips: true,
+  wallpaper: "",
+  gradient: "",
+  messages: [],
+  saved: [],
+  navigation: {
+    wall: true,
+    messages: true,
+    friends: true,
+    online: true,
+    games: true,
+    builder: true
+  },
+  stats: { views: 0, subs: 0, following: 0 }
+};
+
+function loadState() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return {
+      ...structuredClone(DEFAULTS),
+      ...(stored || {}),
+      navigation: { ...DEFAULTS.navigation, ...(stored?.navigation || {}) },
+      stats: { ...DEFAULTS.stats, ...(stored?.stats || {}) }
+    };
+  } catch (error) {
+    console.warn("Не удалось прочитать сохранённые данные:", error);
+    return structuredClone(DEFAULTS);
+  }
+}
+
+let state = loadState();
+let activePage = "wall";
+let pendingNavigation = { ...state.navigation };
+let toastTimeout = null;
+
+const $ = id => document.getElementById(id);
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn("Не удалось сохранить данные:", error);
+    showToast("Не удалось сохранить данные. Возможно, хранилище заполнено.");
+  }
+}
+
+function icon(name) {
+  return `<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[ch]);
+}
+
+function showToast(message) {
+  $("toast").textContent = message;
+  $("toast").hidden = false;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => $("toast").hidden = true, 2600);
+}
+
+/* =========================================================
+   3. ТЕМА, ЦВЕТА, ПРОЗРАЧНОСТЬ, ШРИФТ И ОБОИ
+   ========================================================= */
+
+function applySettings() {
+  document.body.classList.toggle("light", state.theme === "light");
+  document.documentElement.style.setProperty("--accent", state.accent);
+  document.documentElement.style.setProperty("--opacity", state.opacity / 100);
+  document.documentElement.style.setProperty("--font", state.font);
+
+  const workspace = $("workspace");
+  workspace.style.backgroundImage = state.wallpaper
+    ? `url("${state.wallpaper}")`
+    : (state.gradient || "none");
+
+  $("darkMode").checked = state.theme === "dark";
+  $("customAccent").value = state.accent;
+  $("opacityRange").value = state.opacity;
+  $("opacityValue").textContent = state.opacity + "%";
+  $("fontSelect").value = state.font;
+  $("tipsToggle").checked = state.tips;
+
+  document.querySelectorAll(".color-swatch").forEach(button => {
+    button.classList.toggle("selected", button.dataset.color === state.accent);
+  });
+
+  persist();
+}
+
+function setAccent(color) {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+  state.accent = color;
+  applySettings();
+}
+
+function chooseWallpaper() {
+  $("wallpaperFile").click();
+}
+
+$("wallpaperFile").addEventListener("change", event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showToast("Выберите файл изображения.");
+    event.target.value = "";
+    return;
+  }
+
+  // Ограничение снижает риск переполнения localStorage.
+  if (file.size > 2 * 1024 * 1024) {
+    showToast("Изображение слишком большое. Максимум 2 МБ.");
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.wallpaper = String(reader.result);
+    state.gradient = "";
+    applySettings();
+    showToast("Обои установлены.");
+  };
+  reader.onerror = () => showToast("Не удалось прочитать изображение.");
+  reader.readAsDataURL(file);
+  event.target.value = "";
+});
+
+function chooseGradient() {
+  openModal("Цвет и градиент", `
+    <label class="field-label" for="gradientStart">Первый цвет</label>
+    <input class="field" type="color" id="gradientStart" value="#17212b" style="height:44px;padding:4px">
+    <label class="field-label" for="gradientEnd">Второй цвет</label>
+    <input class="field" type="color" id="gradientEnd" value="#263d50" style="height:44px;padding:4px">
+    <label class="field-label" for="gradientDirection">Направление</label>
+    <select class="field" id="gradientDirection">
+      <option value="135deg">Диагональ</option>
+      <option value="90deg">Слева направо</option>
+      <option value="180deg">Сверху вниз</option>
+      <option value="45deg">Обратная диагональ</option>
+    </select>
+    <div style="height:80px;border-radius:8px;margin-top:12px;background:linear-gradient(135deg,#17212b,#263d50)" id="gradientPreview"></div>
+  `, [
+    { label: "Очистить", action: () => {
+      state.gradient = "";
+      state.wallpaper = "";
+      applySettings();
+      closeModal();
+    }},
+    { label: "Применить", primary: true, action: () => {
+      const a = $("gradientStart").value;
+      const b = $("gradientEnd").value;
+      const direction = $("gradientDirection").value;
+      state.gradient = `linear-gradient(${direction}, ${a}, ${b})`;
+      state.wallpaper = "";
+      applySettings();
+      closeModal();
+      showToast("Градиент применён.");
+    }}
+  ]);
+
+  const updatePreview = () => {
+    $("gradientPreview").style.background =
+      `linear-gradient(${$("gradientDirection").value}, ${$("gradientStart").value}, ${$("gradientEnd").value})`;
+  };
+  $("gradientStart").addEventListener("input", updatePreview);
+  $("gradientEnd").addEventListener("input", updatePreview);
+  $("gradientDirection").addEventListener("change", updatePreview);
+}
+
+$("darkMode").addEventListener("change", event => {
+  state.theme = event.target.checked ? "dark" : "light";
+  applySettings();
+});
+
+$("colorGrid").addEventListener("click", event => {
+  const button = event.target.closest("[data-color]");
+  if (button) setAccent(button.dataset.color);
+});
+
+$("customAccent").addEventListener("input", event => setAccent(event.target.value));
+
+$("opacityRange").addEventListener("input", event => {
+  state.opacity = Number(event.target.value);
+  $("opacityValue").textContent = state.opacity + "%";
+  document.documentElement.style.setProperty("--opacity", state.opacity / 100);
+  persist();
+});
+
+$("fontSelect").addEventListener("change", event => {
+  state.font = event.target.value;
+  applySettings();
+});
+
+$("tipsToggle").addEventListener("change", event => {
+  state.tips = event.target.checked;
+  $("tooltip").hidden = true;
+  persist();
+});
+
+$("wallpaperButton").addEventListener("click", chooseWallpaper);
+$("gradientButton").addEventListener("click", chooseGradient);
+
+/* =========================================================
+   4. ПРОФИЛЬ И ДЕМОРЕГИСТРАЦИЯ
+   ========================================================= */
+
+function createProfile(name, handle) {
+  const cleanName = name.trim().slice(0, 40);
+  if (!cleanName) {
+    showToast("Введите имя пользователя.");
+    $("registerName").focus();
+    return;
+  }
+
+  const cleanHandle = handle.trim()
+    .replace(/^@/, "")
+    .replace(/[^a-zA-Z0-9_]/g, "")
+    .slice(0, 30);
+
+  state.profile = {
+    name: cleanName,
+    handle: cleanHandle || "user",
+    avatar: ""
+  };
+
+  persist();
+  updateProfileUI();
+  $("registerOverlay").hidden = true;
+  showToast("Демопрофиль создан.");
+}
+
+function updateProfileUI() {
+  const profile = state.profile;
+  if (!profile) return;
+
+  $("brandName").textContent = profile.name;
+  $("profileName").textContent = profile.name;
+  $("profileHandle").textContent = "@" + profile.handle;
+  $("avatarInitial").textContent = profile.name.charAt(0).toUpperCase() || "U";
+
+  const avatar = $("profileAvatar");
+  avatar.innerHTML = profile.avatar
+    ? `<img src="${profile.avatar}" alt="Аватар пользователя">`
+    : `<span>${escapeHTML(profile.name.charAt(0).toUpperCase() || "U")}</span>`;
+
+  $("statViews").textContent = state.stats.views;
+  $("statSubs").textContent = state.stats.subs;
+  $("statFollowing").textContent = state.stats.following;
+  $("statSaved").textContent = state.saved.length;
+}
+
+function ensureProfile() {
+  if (state.profile) return true;
+  $("registerOverlay").hidden = false;
+  setTimeout(() => $("registerName").focus(), 30);
+  return false;
+}
+
+$("registerSubmit").addEventListener("click", () => {
+  createProfile($("registerName").value, $("registerHandle").value);
+});
+
+$("registerName").addEventListener("keydown", event => {
+  if (event.key === "Enter") $("registerHandle").focus();
+});
+
+$("registerHandle").addEventListener("keydown", event => {
+  if (event.key === "Enter") $("registerSubmit").click();
+});
+
+$("bottomProfileButton").addEventListener("click", () => {
+  if (ensureProfile()) navigate("profile");
+});
+
+$("editProfileButton").addEventListener("click", () => {
+  if (!state.profile) return;
+
+  openModal("Изменить профиль", `
+    <label class="field-label" for="editName">Имя</label>
+    <input class="field" id="editName" maxlength="40" value="${escapeHTML(state.profile.name)}">
+    <label class="field-label" for="editHandle">Имя профиля</label>
+    <input class="field" id="editHandle" maxlength="30" value="${escapeHTML(state.profile.handle)}">
+    <label class="field-label">Фотография профиля</label>
+    <button class="secondary" id="changeAvatar">Загрузить изображение</button>
+  `, [
+    { label: "Отмена", action: closeModal },
+    { label: "Сохранить", primary: true, action: () => {
+      const name = $("editName").value.trim();
+      if (!name) {
+        showToast("Имя не может быть пустым.");
+        return;
+      }
+
+      state.profile.name = name.slice(0, 40);
+      state.profile.handle = $("editHandle").value.trim()
+        .replace(/^@/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30) || "user";
+      persist();
+      updateProfileUI();
+      closeModal();
+      showToast("Профиль обновлён.");
+    }}
+  ]);
+
+  $("changeAvatar").addEventListener("click", () => {
+    closeModal();
+    $("avatarFile").click();
+  });
+});
+
+$("avatarFile").addEventListener("change", event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showToast("Выберите изображение.");
+    event.target.value = "";
+    return;
+  }
+
+  if (file.size > 1024 * 1024) {
+    showToast("Размер аватара должен быть не больше 1 МБ.");
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (!state.profile) return;
+    state.profile.avatar = String(reader.result);
+    persist();
+    updateProfileUI();
+    showToast("Фотография профиля обновлена.");
+  };
+  reader.onerror = () => showToast("Не удалось прочитать изображение.");
+  reader.readAsDataURL(file);
+  event.target.value = "";
+});
+
+$("logoutButton").addEventListener("click", () => {
+  if (!confirm("Выйти из демопрофиля? Локальные сообщения и настройки сохранятся.")) return;
+  state.profile = null;
+  persist();
+  navigate("wall");
+  $("registerName").value = "";
+  $("registerHandle").value = "";
+  $("registerOverlay").hidden = false;
+});
+
+/* =========================================================
+   5. ПЕРЕХОДЫ МЕЖДУ СТРАНИЦАМИ
+   ========================================================= */
+
+const PAGE_NAMES = {
+  wall: "Стена",
+  messages: "Сообщения",
+  friends: "Друзья",
+  online: "Онлайн",
+  games: "Игры",
+  builder: "Конструктор",
+  profile: "Мой профиль",
+  settings: "Настройки",
+  saved: "Сохранённое",
+  navigation: "Переходы"
+};
+
+function navigate(page) {
+  const target = $("page-" + page);
+  if (!target) return;
+
+  activePage = page;
+
+  document.querySelectorAll(".page").forEach(element => {
+    element.hidden = element.id !== "page-" + page;
+  });
+
+  document.querySelectorAll(".tab").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === page);
+  });
+
+  // Персональный профиль доступен через кнопку нижней панели.
+  if (state.navigation[page] !== undefined) {
+    document.querySelectorAll(".tab").forEach(button => {
+      button.hidden = !state.navigation[button.dataset.page];
+    });
+  }
+
+  if (page === "profile") updateProfileUI();
+  if (page === "messages") renderMessages();
+  if (page === "saved") renderSaved();
+
+  $("workspace").scrollTop = 0;
+}
+
+$("tabs").addEventListener("click", event => {
+  const button = event.target.closest("[data-page]");
+  if (button && !button.hidden) navigate(button.dataset.page);
+});
+
+document.querySelectorAll("[data-page-link]").forEach(element => {
+  const action = () => {
+    const target = element.dataset.pageLink;
+    if (target === "settings") navigate("settings");
+    else if (target === "saved") navigate("saved");
+  };
+  element.addEventListener("click", action);
+  element.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") action();
+  });
+});
+
+/* [ДОРАБОТКА 2] Поиск и настройки перенесены из шапки в ПКМ-меню.
+   Профиль остаётся доступен через иконку в нижней панели. */
+$("menuButton").addEventListener("click", event => showContextMenu(event.currentTarget));
+$("builderInfo").addEventListener("click", () => {
+  showToast("Конструктор будет подключён отдельным модулем.");
+});
+
+function renderNavigationOptions() {
+  const labels = {
+    wall: "Стена",
+    messages: "Сообщения",
+    friends: "Друзья",
+    online: "Онлайн",
+    games: "Игры",
+    builder: "Конструктор"
+  };
+
+  $("navigationOptions").innerHTML = Object.entries(labels).map(([key, label]) => `
+    <label class="row-item">
+      <span class="row-main"><span class="row-title">${label}</span></span>
+      <input class="switch nav-switch" type="checkbox" data-nav="${key}" ${pendingNavigation[key] ? "checked" : ""} aria-label="Показывать ${label}">
+    </label>
+  `).join("");
+}
+
+$("navSettingsButton").addEventListener("click", () => navigate("navigation"));
+
+$("navigationOptions").addEventListener("change", event => {
+  const input = event.target.closest("[data-nav]");
+  if (input) pendingNavigation[input.dataset.nav] = input.checked;
+});
+
+$("saveNavigationButton").addEventListener("click", () => {
+  // Хотя бы одна вкладка должна оставаться доступной.
+  if (!Object.values(pendingNavigation).some(Boolean)) {
+    showToast("Оставьте включённым хотя бы один раздел.");
+    return;
+  }
+  state.navigation = { ...pendingNavigation };
+  persist();
+  navigate("wall");
+  showToast("Навигация обновлена.");
+});
+
+/* =========================================================
+   6. СООБЩЕНИЯ И РАБОТА НИЖНЕЙ ПАНЕЛИ
+   ========================================================= */
+
+function addMessage(text, mine = true) {
+  const clean = text.trim();
+  if (!clean) return;
+
+  state.messages.push({
+    id: Date.now() + Math.random(),
+    text: clean.slice(0, 4000),
+    mine,
+    time: new Date().toLocaleTimeString("ru-RU", {
+      hour: "2-digit", minute: "2-digit"
+    })
+  });
+
+  // Ограничиваем размер истории для лёгкого прототипа.
+  if (state.messages.length > 300) state.messages.shift();
+
+  persist();
+  renderMessages();
+  $("wallEmpty").hidden = state.messages.length > 0;
+}
+
+function renderMessages() {
+  const html = state.messages.map(message => `
+    <article class="message ${message.mine ? "mine" : ""}">
+      ${escapeHTML(message.text)}
+      <span class="message-time">${escapeHTML(message.time)}</span>
+    </article>
+  `).join("");
+
+  $("messageList").innerHTML = html;
+  $("wallMessages").innerHTML = html;
+  $("wallEmpty").hidden = state.messages.length > 0;
+}
+
+function sendCurrentMessage() {
+  const input = $("messageInput");
+  const text = input.value;
+  if (!text.trim()) return;
+
+  addMessage(text);
+  input.value = "";
+  input.style.height = "38px";
+  navigate(activePage === "messages" ? "messages" : "wall");
+}
+
+$("sendButton").addEventListener("click", sendCurrentMessage);
+
+$("messageInput").addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendCurrentMessage();
+  }
+});
+
+$("messageInput").addEventListener("input", event => {
+  const input = event.target;
+  input.style.height = "38px";
+  input.style.height = Math.min(input.scrollHeight, 100) + "px";
+});
+
+/* =========================================================
+   7. ВЛОЖЕНИЯ И СОХРАНЁННОЕ
+   ========================================================= */
+
+$("attachButton").addEventListener("click", () => $("attachmentFile").click());
+
+$("attachmentFile").addEventListener("change", event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  // На этом этапе вложение не отправляется на сервер.
+  addMessage("Выбран файл: " + file.name);
+  showToast("Добавлено название файла. Передача файла пока не подключена.");
+  event.target.value = "";
+});
+
+function renderSaved() {
+  $("savedList").innerHTML = state.saved.map((item, index) => `
+    <div class="section">
+      <div class="row-item">
+        <div class="row-icon">${icon("bookmark")}</div>
+        <div class="row-main"><div class="row-title">${escapeHTML(item)}</div></div>
+        <button class="secondary danger" data-remove-saved="${index}">Удалить</button>
+      </div>
+    </div>
+  `).join("");
+
+  $("savedEmpty").hidden = state.saved.length > 0;
+  $("statSaved").textContent = state.saved.length;
+}
+
+$("savedList").addEventListener("click", event => {
+  const button = event.target.closest("[data-remove-saved]");
+  if (!button) return;
+
+  state.saved.splice(Number(button.dataset.removeSaved), 1);
+  persist();
+  renderSaved();
+  updateProfileUI();
+});
+
+function saveCurrentMessage() {
+  const lastMessage = state.messages[state.messages.length - 1];
+  if (!lastMessage) {
+    showToast("Сначала отправьте сообщение.");
+    return;
+  }
+  state.saved.push(lastMessage.text);
+  persist();
+  updateProfileUI();
+  showToast("Последнее сообщение сохранено.");
+}
+
+/* =========================================================
+   8. КОНТЕКСТНОЕ МЕНЮ И ПРАВЫЙ КЛИК
+   ========================================================= */
+
+function showContextMenu(anchor) {
+  const menu = $("contextMenu");
+  menu.hidden = false;
+
+  const rect = anchor.getBoundingClientRect();
+  const width = 245;
+  const height = menu.offsetHeight || 230;
+  const x = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8);
+  const y = Math.min(Math.max(8, rect.bottom + 5), window.innerHeight - height - 8);
+
+  menu.style.left = x + "px";
+  menu.style.top = y + "px";
+}
+
+function showContextAt(x, y) {
+  const menu = $("contextMenu");
+  menu.hidden = false;
+
+  const width = menu.offsetWidth || 245;
+  const height = menu.offsetHeight || 230;
+  menu.style.left = Math.max(8, Math.min(x, innerWidth - width - 8)) + "px";
+  menu.style.top = Math.max(8, Math.min(y, innerHeight - height - 8)) + "px";
+}
+
+$("workspace").addEventListener("contextmenu", event => {
+  event.preventDefault();
+  showContextAt(event.clientX, event.clientY);
+});
+
+document.addEventListener("click", event => {
+  if (!event.target.closest("#contextMenu") && !event.target.closest("#menuButton")) {
+    $("contextMenu").hidden = true;
+  }
+  if (!event.target.closest("#composerMenu") && !event.target.closest(".composer")) {
+    $("composerMenu").hidden = true;
+  }
+});
+
+$("contextMenu").addEventListener("click", event => {
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
+
+  $("contextMenu").hidden = true;
+
+  switch (button.dataset.action) {
+    case "search": openSearchModal("Поиск по сообщениям"); break;
+    case "settings": navigate("settings"); break;
+    case "wallpaper": chooseWallpaper(); break;
+    case "gradient": chooseGradient(); break;
+    case "profile":
+      if (ensureProfile()) navigate("profile");
+      break;
+    case "navigation": navigate("navigation"); break;
+  }
+});
+
+/* =========================================================
+   9. ПОИСК ПО ЛОКАЛЬНЫМ СООБЩЕНИЯМ
+   ========================================================= */
+
+/* [ДОБАВЛЕНО] Поиск по локальным сообщениям.
+   AI-поиск и каталог игр подготовлены интерфейсно, но не подключены к серверу/API. */
+function openSearchModal(title = "Поиск по сообщениям", placeholder = "Введите текст для поиска") {
+  openModal(title, `
+    <label class="field-label" for="searchInput">Поисковый запрос</label>
+    <input class="field" id="searchInput" placeholder="${escapeHTML(placeholder)}">
+    <div id="searchResults" style="margin-top:12px"></div>
+  `, [
+    { label: "Закрыть", action: closeModal },
+    { label: "Найти", primary: true, action: () => {
+      const query = $("searchInput").value.trim().toLowerCase();
+      const results = query ? state.messages.filter(message =>
+        message.text.toLowerCase().includes(query)
+      ) : [];
+      $("searchResults").innerHTML = !query
+        ? '<div class="row-desc">Введите поисковый запрос.</div>'
+        : results.length
+          ? results.map(message => `
+            <div class="section"><div class="row-item">
+              <div class="row-main">${escapeHTML(message.text)}</div>
+            </div></div>
+          `).join("")
+          : '<div class="row-desc">Совпадений не найдено.</div>';
+    }}
+  ]);
+  setTimeout(() => $("searchInput")?.focus(), 30);
+}
+
+function openComposerAction(action) {
+  $("composerMenu").hidden = true;
+
+  if (action === "ai") {
+    openModal("Поиск AI", `
+      <div class="row-desc" style="line-height:1.6">
+        Интерфейс для будущего подключения AI. В этой локальной версии AI-модель не подключена.
+        Пока можно искать по сохранённым сообщениям.
+      </div>
+      <label class="field-label" for="searchInput">Запрос</label>
+      <input class="field" id="searchInput" placeholder="Что нужно найти?">
+      <div id="searchResults" style="margin-top:12px"></div>
+    `, [
+      {label:"Закрыть", action:closeModal},
+      {label:"Искать локально", primary:true, action:() => {
+        const q = $("searchInput").value.trim().toLowerCase();
+        const found = q ? state.messages.filter(m => m.text.toLowerCase().includes(q)) : [];
+        $("searchResults").innerHTML = !q
+          ? '<div class="row-desc">Введите запрос.</div>'
+          : found.length
+            ? found.map(m => `<div class="section"><div class="row-item">${escapeHTML(m.text)}</div></div>`).join("")
+            : '<div class="row-desc">Совпадений не найдено.</div>';
+      }}
+    ]);
+    return;
+  }
+
+  if (action === "games") {
+    navigate("games");
+    openModal("Поиск игр", `
+      <label class="field-label" for="gameQuery">Название игры</label>
+      <input class="field" id="gameQuery" placeholder="Введите название">
+      <p class="row-desc">Каталог игр и поиск по серверу пока не подключены.</p>
+    `, [
+      {label:"Закрыть", action:closeModal},
+      {label:"Найти", primary:true, action:() => {
+        const q = $("gameQuery").value.trim();
+        showToast(q ? "Каталог игр пока не подключён." : "Введите название игры.");
+        if (q) closeModal();
+      }}
+    ]);
+    return;
+  }
+
+  if (action === "chats") {
+    navigate("messages");
+    openSearchModal("Поиск чатов", "Найти текст в локальных сообщениях");
+    return;
+  }
+
+  if (action === "search") {
+    openSearchModal("Общий поиск");
+    return;
+  }
+
+  if (action === "stickers") {
+    openModal("Стикеры", `
+      <p class="row-desc">Нажмите на стикер, чтобы добавить его в поле ввода.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        ${["😀","😂","🥹","😍","😎","🤔","👍","❤️","🔥","🌱","🎮","🚀","✨","👾","💎","🌍"].map(sticker =>
+          `<button class="secondary" data-sticker="${sticker}" style="font-size:25px;padding:12px 4px">${sticker}</button>`
+        ).join("")}
+      </div>
+    `, [{label:"Закрыть", action:closeModal}]);
+
+    $("modalBody").querySelectorAll("[data-sticker]").forEach(button => {
+      button.addEventListener("click", () => {
+        const input = $("messageInput");
+        input.value += button.dataset.sticker;
+        input.focus();
+        input.dispatchEvent(new Event("input", {bubbles:true}));
+        closeModal();
+      });
+    });
+  }
+}
+
+$("composerMenu").addEventListener("click", event => {
+  const button = event.target.closest("[data-composer-action]");
+  if (button) openComposerAction(button.dataset.composerAction);
+});
+
+function showComposerMenuAt(x, y) {
+  const menu = $("composerMenu");
+  menu.hidden = false;
+  const width = menu.offsetWidth || 245;
+  const height = menu.offsetHeight || 260;
+  menu.style.left = Math.max(8, Math.min(x, innerWidth - width - 8)) + "px";
+  menu.style.top = Math.max(8, Math.min(y, innerHeight - height - 8)) + "px";
+}
+
+/* ПКМ по нижней панели открывает собственное меню инструментов. */
+const composerElement = document.querySelector(".composer");
+composerElement.addEventListener("contextmenu", event => {
+  event.preventDefault();
+  $("contextMenu").hidden = true;
+  showComposerMenuAt(event.clientX, event.clientY);
+});
+
+/* Длительное нажатие на телефоне — аналог правого клика. */
+let composerPressTimer = null;
+composerElement.addEventListener("pointerdown", event => {
+  if (event.pointerType !== "touch") return;
+  const x = event.clientX;
+  const y = event.clientY;
+  composerPressTimer = setTimeout(() => showComposerMenuAt(x, y), 550);
+});
+["pointerup", "pointercancel", "pointermove"].forEach(type => {
+  composerElement.addEventListener(type, () => clearTimeout(composerPressTimer));
+});
+$("composerMenu").addEventListener("contextmenu", event => event.preventDefault());
+
+/* =========================================================
+   10. УНИВЕРСАЛЬНОЕ МОДАЛЬНОЕ ОКНО
+   ========================================================= */
+
+function openModal(title, bodyHTML, actions = []) {
+  $("modalTitle").textContent = title;
+  $("modalBody").innerHTML = bodyHTML;
+  $("modalFoot").innerHTML = "";
+
+  actions.forEach(action => {
+    const button = document.createElement("button");
+    button.className = action.primary ? "primary" : "secondary";
+    button.textContent = action.label;
+    button.addEventListener("click", action.action);
+    $("modalFoot").appendChild(button);
+  });
+
+  $("modalOverlay").hidden = false;
+}
+
+function closeModal() {
+  $("modalOverlay").hidden = true;
+  $("modalBody").innerHTML = "";
+  $("modalFoot").innerHTML = "";
+}
+
+$("modalClose").addEventListener("click", closeModal);
+$("modalOverlay").addEventListener("click", event => {
+  if (event.target === $("modalOverlay")) closeModal();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeModal();
+    $("contextMenu").hidden = true;
+    $("composerMenu").hidden = true;
+  }
+});
+
+/* =========================================================
+   11. ПОДСКАЗКИ В СТИЛЕ ПРОГРАММ ДЛЯ РАБОТЫ
+   ========================================================= */
+
+const tooltip = $("tooltip");
+let tooltipTimer = null;
+
+document.addEventListener("pointerover", event => {
+  const target = event.target.closest("[data-tip]");
+  if (!target || !state.tips || event.pointerType === "touch") return;
+
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(() => {
+    tooltip.textContent = target.dataset.tip;
+    tooltip.hidden = false;
+
+    const rect = target.getBoundingClientRect();
+    const x = Math.min(Math.max(8, rect.left), innerWidth - 230);
+    const y = Math.min(rect.bottom + 7, innerHeight - 60);
+
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+  }, 450);
+});
+
+document.addEventListener("pointerout", event => {
+  if (event.target.closest("[data-tip]")) {
+    clearTimeout(tooltipTimer);
+    tooltip.hidden = true;
+  }
+});
+
+/* =========================================================
+   12. СБРОС НАСТРОЕК
+   ========================================================= */
+
+$("resetSettingsButton").addEventListener("click", () => {
+  if (!confirm("Сбросить настройки темы, цветов, шрифта и обоев?")) return;
+
+  state.theme = DEFAULTS.theme;
+  state.accent = DEFAULTS.accent;
+  state.opacity = DEFAULTS.opacity;
+  state.font = DEFAULTS.font;
+  state.tips = DEFAULTS.tips;
+  state.wallpaper = "";
+  state.gradient = "";
+
+  applySettings();
+  showToast("Настройки сброшены.");
+});
+
+/* =========================================================
+   13. СТАРТОВАЯ ИНИЦИАЛИЗАЦИЯ
+   ========================================================= */
+
+function initializeApp() {
+  applySettings();
+  renderMessages();
+  renderSaved();
+  renderNavigationOptions();
+
+  if (state.profile) {
+    updateProfileUI();
+    $("registerOverlay").hidden = true;
+  } else {
+    $("registerOverlay").hidden = false;
+  }
+
+  // Первоначальные просмотры здесь демонстрационные.
+  state.stats.views = Math.max(0, Number(state.stats.views) || 0);
+  persist();
+  navigate("wall");
+}
+
+initializeApp();
+</script>
+</body>
+</html>
