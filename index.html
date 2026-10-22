@@ -321,11 +321,17 @@ svg { width: 20px; height: 20px; display: block; }
      Обёртка прозрачная; фон, рамка и тень остаются только у .composer. */
   flex-shrink: 0;
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0;
   position: relative;
   z-index: 5;
+}
+.composer-wrap::before,
+.composer-wrap::after {
+  content: none !important;
+  display: none !important;
 }
 
 .composer {
@@ -343,6 +349,8 @@ svg { width: 20px; height: 20px; display: block; }
 }
 
 .composer .icon-btn { flex-shrink: 0; }
+.composer { -webkit-touch-callout: none; }
+.composer, .composer * { -webkit-tap-highlight-color: transparent; }
 
 .message-input {
   flex: 1;
@@ -559,6 +567,7 @@ body.light {
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m4 17 5-5 4 4 3-3 4 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
     <symbol id="i-wall" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" fill="none" stroke="currentColor" stroke-width="1.2"/></symbol>
+    <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 14s1.5 2.5 4 2.5 4-2.5 4-2.5M9 9h.1M15 9h.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
     <symbol id="i-message" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 9 9 0 0 1-3.5-.7L4 20l1.4-4A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
     <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 20c0-3.3 2.1-5 6-5s6 1.7 6 5M16 5.5a3 3 0 0 1 0 5.8M18 15c2 .6 3 2.1 3 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
@@ -1663,14 +1672,35 @@ composerElement.addEventListener("contextmenu", event => {
 
 /* Длительное нажатие на телефоне — аналог правого клика. */
 let composerPressTimer = null;
+let composerPressOrigin = null;
 composerElement.addEventListener("pointerdown", event => {
   if (event.pointerType !== "touch") return;
+  composerPressOrigin = { x: event.clientX, y: event.clientY };
   const x = event.clientX;
   const y = event.clientY;
-  composerPressTimer = setTimeout(() => showComposerMenuAt(x, y), 550);
+  clearTimeout(composerPressTimer);
+  composerPressTimer = setTimeout(() => {
+    showComposerMenuAt(x, y);
+    composerPressTimer = null;
+  }, 550);
 });
-["pointerup", "pointercancel", "pointermove"].forEach(type => {
-  composerElement.addEventListener(type, () => clearTimeout(composerPressTimer));
+composerElement.addEventListener("pointerup", () => {
+  clearTimeout(composerPressTimer);
+  composerPressTimer = null;
+  composerPressOrigin = null;
+});
+composerElement.addEventListener("pointercancel", () => {
+  clearTimeout(composerPressTimer);
+  composerPressTimer = null;
+  composerPressOrigin = null;
+});
+composerElement.addEventListener("pointermove", event => {
+  if (!composerPressOrigin || composerPressTimer === null) return;
+  if (Math.hypot(event.clientX - composerPressOrigin.x, event.clientY - composerPressOrigin.y) > 12) {
+    clearTimeout(composerPressTimer);
+    composerPressTimer = null;
+    composerPressOrigin = null;
+  }
 });
 $("composerMenu").addEventListener("contextmenu", event => event.preventDefault());
 
